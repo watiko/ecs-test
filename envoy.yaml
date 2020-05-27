@@ -3,7 +3,7 @@ static_resources:
   - name: mesh-allow-all
     type: ORIGINAL_DST
     connect_timeout: 1s
-    lb_policy: ORIGINAL_DST_LB
+    lb_policy: CLUSTER_PROVIDED
   - name: app
     type: STATIC
     connect_timeout: 0.250s
@@ -19,6 +19,7 @@ static_resources:
 
   listeners:
   - name: lds_ingress_0.0.0.0_15000
+    traffic_direction: INBOUND
     address:
       socket_address:
         address: 0.0.0.0
@@ -27,15 +28,16 @@ static_resources:
     - filter_chain_match:
         destination_port: 8080
       filters:
-      - name: envoy.http_connection_manager
-        config:
-          tracing: {}
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: envoy.access_loggers.file
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: "/dev/stdout"
           http_filters:
-          - name: envoy.router
+          - name: envoy.filters.http.router
           stat_prefix: ingress
           route_config:
             virtual_hosts:
@@ -48,8 +50,9 @@ static_resources:
                 route:
                   cluster: app
     listener_filters:
-    - name: envoy.listener.original_dst
+    - name: envoy.filters.listener.original_dst
   - name: lds_egress_0.0.0.0_15001
+    traffic_direction: OUTBOUND
     address:
       socket_address:
         address: 0.0.0.0
@@ -61,10 +64,11 @@ static_resources:
           prefix_len: 0
         destination_port: 8080
       filters:
-      - name: envoy.http_connection_manager
-        config:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
           http_filters:
-          - name: envoy.router
+          - name: envoy.filters.http.router
           stat_prefix: egress
           route_config:
             virtual_hosts:
@@ -75,20 +79,20 @@ static_resources:
               - match:
                   prefix: "/"
                 route:
-                  cluster: cds_egress_actcast-sbx-watiko_mesh-allow-all
-          tracing:
-            operation_name: EGRESS
+                  cluster: mesh-allow-all
           access_log:
-          - name: envoy.file_access_log
-            config:
+          - name: envoy.access_loggers.file
+            typed_config:
+              "@type": type.googleapis.com/envoy.config.accesslog.v2.FileAccessLog
               path: "/dev/stdout"
     - filter_chain_match:
         prefix_ranges:
         - address_prefix: 0.0.0.0
           prefix_len: 0
       filters:
-      - name: envoy.tcp_proxy
-        config:
+      - name: envoy.filters.network.tcp_proxy
+        typed_config:
+          "@type": type.googleapis.com/envoy.config.filter.network.tcp_proxy.v2.TcpProxy
           stat_prefix: egress
           cluster: mesh-allow-all
     - filter_chain_match:
@@ -98,12 +102,13 @@ static_resources:
         destination_port: 443
       filters:
       - name: envoy.tcp_proxy
-        config:
+        typed_config:
+          "@type": type.googleapis.com/envoy.config.filter.network.tcp_proxy.v2.TcpProxy
           stat_prefix: egress
           cluster: mesh-allow-all
     listener_filters:
-    - name: envoy.listener.original_dst
-    - name: envoy.listener.tls_inspector
+    - name: envoy.filters.listener.original_dst
+    - name: envoy.filters.listener.tls_inspector
 
 admin:
   access_log_path: "/dev/null"
