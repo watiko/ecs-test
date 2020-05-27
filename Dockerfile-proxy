@@ -1,0 +1,7 @@
+FROM alpine
+
+RUN apk add --no-cache iptables iputils bash
+
+COPY ./sidecar-proxy-route-manager.sh /opt/bin/sidecar-proxy-route-manager.sh
+
+ENTRYPOINT /bin/sh -c /opt/bin/sidecar-proxy-route-manager.sh

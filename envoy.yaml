@@ -1,0 +1,113 @@
+static_resources:
+  clusters:
+  - name: mesh-allow-all
+    type: ORIGINAL_DST
+    connect_timeout: 1s
+    lb_policy: ORIGINAL_DST_LB
+  - name: app
+    type: STATIC
+    connect_timeout: 0.250s
+    load_assignment:
+      cluster_name: app
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: 8080
+
+  listeners:
+  - name: lds_ingress_0.0.0.0_15000
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 15000
+    filter_chains:
+    - filter_chain_match:
+        destination_port: 8080
+      filters:
+      - name: envoy.http_connection_manager
+        config:
+          tracing: {}
+          access_log:
+          - name: envoy.file_access_log
+            config:
+              path: "/dev/stdout"
+          http_filters:
+          - name: envoy.router
+          stat_prefix: ingress
+          route_config:
+            virtual_hosts:
+            - name: local_service
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: app
+    listener_filters:
+    - name: envoy.listener.original_dst
+  - name: lds_egress_0.0.0.0_15001
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 15001
+    filter_chains:
+    - filter_chain_match:
+        prefix_ranges:
+        - address_prefix: 0.0.0.0
+          prefix_len: 0
+        destination_port: 8080
+      filters:
+      - name: envoy.http_connection_manager
+        config:
+          http_filters:
+          - name: envoy.router
+          stat_prefix: egress
+          route_config:
+            virtual_hosts:
+            - name: mesh_allow_all
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: cds_egress_actcast-sbx-watiko_mesh-allow-all
+          tracing:
+            operation_name: EGRESS
+          access_log:
+          - name: envoy.file_access_log
+            config:
+              path: "/dev/stdout"
+    - filter_chain_match:
+        prefix_ranges:
+        - address_prefix: 0.0.0.0
+          prefix_len: 0
+      filters:
+      - name: envoy.tcp_proxy
+        config:
+          stat_prefix: egress
+          cluster: mesh-allow-all
+    - filter_chain_match:
+        prefix_ranges:
+        - address_prefix: 0.0.0.0
+          prefix_len: 0
+        destination_port: 443
+      filters:
+      - name: envoy.tcp_proxy
+        config:
+          stat_prefix: egress
+          cluster: mesh-allow-all
+    listener_filters:
+    - name: envoy.listener.original_dst
+    - name: envoy.listener.tls_inspector
+
+admin:
+  access_log_path: "/dev/null"
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901

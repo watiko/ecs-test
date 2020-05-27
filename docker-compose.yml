@@ -1,0 +1,38 @@
+version: "3.7"
+
+services:
+
+  pause:
+    image: alpine
+    command: sh -c 'while true; do sleep 30; done;'
+    ports:
+      - 8080:8080 # app
+      - 9901:9901 # envoy: curl localhost:9901/config_dump
+
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile-proxy
+    cap_add:
+      - NET_ADMIN
+    network_mode: service:pause
+    command: enable
+    environment:
+      APPMESH_START_ENABLED:         1
+      APPMESH_IGNORE_UID:            1337
+      APPMESH_ENVOY_INGRESS_PORT:    15000
+      APPMESH_ENVOY_EGRESS_PORT:     15001
+      APPMESH_APP_PORTS:             8080
+      APPMESH_EGRESS_IGNORED_IP:     169.254.169.254
+      APPMESH_EGRESS_IGNORED_PORTS:  22
+
+  envoy:
+    image: envoyproxy/envoy-dev:latest
+    network_mode: service:pause
+    command: /usr/local/bin/envoy -c /etc/envoy.yaml --log-level info --service-cluster mesh/XXX/virtualNode/XXX 
+    volumes:
+      - ./envoy.yaml:/etc/envoy.yaml
+
+  app:
+    build: ./app
+    network_mode: service:pause
