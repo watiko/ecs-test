@@ -36,3 +36,11 @@ services:
   app:
     build: ./app
     network_mode: service:pause
+
+  debug:
+    build:
+      context: .
+      dockerfile: Dockerfile-debug
+    cap_add:
+      - NET_ADMIN
+    network_mode: service:pause
