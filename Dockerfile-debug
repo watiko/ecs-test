@@ -3,6 +3,9 @@ FROM debian
 ENV TZ=Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
 
+RUN useradd -m --uid 1337 debug && \
+    echo "debug ALL=NOPASSWD: ALL" >> /etc/sudoers
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     tcpdump \

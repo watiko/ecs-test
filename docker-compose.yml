@@ -29,6 +29,7 @@ services:
   envoy:
     image: envoyproxy/envoy-dev:latest
     network_mode: service:pause
+    user: '1337'
     command: /usr/local/bin/envoy -c /etc/envoy.yaml --log-level info --service-cluster mesh/XXX/virtualNode/XXX 
     volumes:
       - ./envoy.yaml:/etc/envoy.yaml
@@ -44,3 +45,4 @@ services:
     cap_add:
       - NET_ADMIN
     network_mode: service:pause
+    user: '1337'
