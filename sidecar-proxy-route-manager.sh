@@ -2,18 +2,6 @@
 
 # from https://github.com/awsdocs/aws-app-mesh-user-guide/blob/1fc65911cb84db2140d43e3d80ac803e56fa4d16/doc_source/appmesh-getting-started.md
 
-#
-# Start of configurable options
-#
-
-
-#APPMESH_START_ENABLED="0"
-APPMESH_IGNORE_UID="1337"
-APPMESH_APP_PORTS="8000"
-APPMESH_ENVOY_EGRESS_PORT="15001"
-APPMESH_ENVOY_INGRESS_PORT="15000"
-APPMESH_EGRESS_IGNORED_IP="169.254.169.254,169.254.170.2" 
-
 # Enable routing on the application start.
 [ -z "$APPMESH_START_ENABLED" ] && APPMESH_START_ENABLED="0"
 
