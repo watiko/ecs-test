@@ -1,17 +1,44 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
+func max(x int, y int) int {
+	if x > y {
+		return x
+	}
+	return y
+}
+
 func main() {
 	router := gin.Default()
 
+	router.GET("/wait/:sec", func(c *gin.Context) {
+		i, err := strconv.Atoi(c.Param("sec"))
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("%v", err),
+			})
+			return
+		}
+
+		sec := max(0, i)
+		time.Sleep(time.Second * time.Duration(sec))
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf("complete(wait %d)", sec),
+		})
+	})
+
 	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
