@@ -1,3 +1,12 @@
+## test
+
+```
+$ docker-compose up -d pause proxy envoy app
+$ cd tester
+$ npm ci
+$ npm start
+```
+
 ## on macOS
 
 ```
