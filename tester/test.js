@@ -1,8 +1,10 @@
 const got = require('got');
 
+const PORT = process.env.PORT || 8080;
+
 async function wait(sec) {
   while (true) {
-    const res = await got(`http://localhost:8080/wait/${sec}`);
+    const res = await got(`http://localhost:${PORT}/wait/${sec}`);
     console.log(res.body);
   }
 }
