@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -51,5 +54,23 @@ func main() {
 		IdleTimeout:  2 * time.Minute,
 	}
 
-	server.ListenAndServe()
+	ln, err := listen(server.Addr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(-1)
+	}
+
+	server.Serve(ln)
+}
+
+func listen(address string) (net.Listener, error) {
+	lc := net.ListenConfig{
+		KeepAlive: 2 * time.Minute,
+	}
+	ln, err := lc.Listen(context.Background(), "tcp", address)
+
+	if err != nil {
+		return nil, err
+	}
+	return ln, nil
 }
